@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#F0F4F8">
+    <!-- Force Light Mode to avoid auto-darkening turning cards blue -->
+    <meta name="color-scheme" content="light"> 
+    
+    <title>Glass Fit Plan</title>
+    <style>
+        :root {
+            /* Palette - Clean, Light, Glassy */
+            --bg-base: #F0F4F8;
+            --glass-surface: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --glass-highlight: rgba(255, 255, 255, 0.8);
+            --blur-amt: 20px;
+            
+            --text-primary: #1C1C1E;
+            --text-secondary: #636366;
+            --text-tertiary: #8E8E93;
+            
+            --accent: #007AFF; /* Apple Blue */
+            --accent-gradient: linear-gradient(135deg, #007AFF, #00C7BE);
+            --danger: #FF3B30;
+            
+            --radius-l: 24px;
+            --radius-m: 16px;
+            --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.04);
+            --shadow-crisp: 0 2px 8px rgba(0, 0, 0, 0.03);
+        }
+
+        /* RESET & BASE */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif; }
+        
+        body {
+            margin: 0; padding: 0;
+            background: var(--bg-base);
+            /* Subtle Mesh Gradient Background */
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(200, 230, 255, 0.5) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(230, 255, 230, 0.4) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(255, 230, 230, 0.4) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            /* Safe Area for Notch */
+            padding-top: env(safe-area-inset-top);
+        }
+
+        /* UTILS */
+        .hidden { display: none !important; }
+        .flex-row { display: flex; align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .text-sm { font-size: 13px; line-height: 1.4; color: var(--text-secondary); }
+        .text-xs { font-size: 11px; color: var(--text-tertiary); letter-spacing: 0.5px; text-transform: uppercase; font-weight: 600; }
+        .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        /* GLASS COMPONENTS */
+        .glass-panel {
+            background: var(--glass-surface);
+            backdrop-filter: blur(var(--blur-amt));
+            -webkit-backdrop-filter: blur(var(--blur-amt));
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-soft);
+            border-radius: var(--radius-l);
+        }
+
+        .glass-btn {
+            background: rgba(255,255,255,0.5);
+            border: 1px solid rgba(0,0,0,0.05);
+            padding: 10px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .glass-btn:active { background: rgba(255,255,255,0.8); transform: scale(0.96); }
+        .btn-primary { background: var(--text-primary); color: white; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .btn-lg { width: 100%; padding: 18px; font-size: 18px; border-radius: 20px; }
+
+        /* SCROLL VIEW */
+        .scroll-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            padding-bottom: 120px; /* Space for bottom nav */
+        }
+
+        /* HEADER */
+        header {
+            padding: 10px 24px 20px;
+            display: flex; justify-content: space-between; align-items: flex-end;
+        }
+        h1 { font-size: 32px; font-weight: 700; margin: 0; letter-spacing: -0.5px; }
+
+        /* WORKOUT LIST STYLES */
+        .section-title {
+            margin: 24px 4px 12px;
+            font-size: 20px; font-weight: 700;
+            display: flex; justify-content: space-between; align-items: baseline;
+        }
+        .section-meta { font-size: 14px; color: var(--accent); font-weight: 500; background: rgba(0,122,255,0.1); padding: 4px 10px; border-radius: 12px; }
+
+        .list-group {
+            background: var(--glass-surface);
+            border-radius: var(--radius-l);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid white;
+            box-shadow: var(--shadow-crisp);
+            overflow: hidden;
+        }
+
+        .list-item {
+            padding: 16px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            gap: 12px;
+            transition: background 0.2s;
+        }
+        .list-item:last-child { border-bottom: none; }
+        .list-item:active { background: rgba(255,255,255,0.5); }
+
+        .item-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, #f0f0f0, #e6e6e6);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .item-content { flex: 1; min-width: 0; }
+        .item-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .item-name { font-weight: 600; font-size: 16px; color: var(--text-primary); }
+        .item-metric { font-weight: 600; font-size: 14px; color: var(--text-primary); background: rgba(0,0,0,0.04); padding: 2px 8px; border-radius: 6px; }
+        
+        /* PLAYER OVERLAY */
+        #view-player {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(245, 247, 250, 0.95);
+            backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            z-index: 200;
+            display: flex; flex-direction: column;
+            padding: calc(env(safe-area-inset-top) + 20px) 24px 40px;
+            text-align: center;
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .player-hidden { transform: translateY(100%); }
+
+        .player-card {
+            flex: 1;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+            margin: 20px 0;
+            padding: 30px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Progress Bar in Player */
+        .progress-track { position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: #f0f0f0; }
+        .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+
+        .timer-big { font-size: 72px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -3px; color: var(--text-primary); margin: 10px 0; }
+        .instruction-box { background: #F9F9F9; padding: 15px; border-radius: 16px; text-align: left; width: 100%; margin-top: 10px; max-height: 120px; overflow-y: auto; }
+
+        /* EDITOR MODAL */
+        #view-editor {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #F2F2F7;
+            z-index: 100;
+            display: flex; flex-direction: column;
+            padding-top: env(safe-area-inset-top);
+        }
+        
+        .edit-input { width: 100%; padding: 12px; background: white; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; margin-bottom: 8px; font-size: 16px; }
+        .edit-textarea { width: 100%; padding: 12px; background: white; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; font-size: 14px; min-height: 60px; font-family: inherit; resize: none; }
+
+        /* Bottom Menu */
+        .fab-container {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(30,30,30,0.8);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            padding: 8px;
+            border-radius: 40px;
+            display: flex; gap: 5px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 90;
+        }
+        .fab-btn {
+            background: transparent; color: rgba(255,255,255,0.7);
+            border: none; padding: 12px 20px;
+            border-radius: 30px; font-weight: 600; font-size: 14px;
+        }
+        .fab-btn.active { background: white; color: black; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+
+    </style>
+</head>
+<body>
+
+    <!-- HOME VIEW -->
+    <header>
+        <div>
+            <div class="text-xs">TODAY'S PLAN</div>
+            <h1>Daily Fit</h1>
+        </div>
+        <div onclick="startWorkout()" style="background: var(--text-primary); color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); cursor: pointer;">▶</div>
+    </header>
+
+    <div id="view-home" class="scroll-container">
+        <!-- JS will render sections here -->
+        <div id="plan-container"></div>
+        <div style="height: 50px;"></div>
+    </div>
+
+    <!-- FLOATING MENU -->
+    <div class="fab-container">
+        <button class="fab-btn active" onclick="switchView('home')">Home</button>
+        <button class="fab-btn" onclick="openEditor()">Edit</button>
+    </div>
+
+    <!-- PLAYER OVERLAY -->
+    <div id="view-player" class="player-hidden">
+        <div class="flex-row justify-between" style="padding-bottom: 10px;">
+            <div class="text-xs" id="player-progress">1 / 15</div>
+            <button class="glass-btn" onclick="quitWorkout()" style="color:var(--text-secondary)">✕ Close</button>
+        </div>
+
+        <div class="player-card">
+            <div class="progress-track"><div id="player-bar" class="progress-fill"></div></div>
+            
+            <div class="text-xs" id="player-label" style="color: var(--accent); margin-bottom: 10px;">WORKOUT</div>
+            <h2 id="player-title" style="font-size: 32px; margin: 0; line-height: 1.1;">Push Up</h2>
+            
+            <div id="timer-box">
+                <div id="timer-val" class="timer-big">15</div>
+                <div id="timer-unit" class="text-xs" style="margin-top:-10px">REPS</div>
+            </div>
+
+            <div class="instruction-box">
+                <div class="text-xs" style="margin-bottom: 4px; font-weight: bold;">HOW TO:</div>
+                <div id="player-desc" class="text-sm">Keep your back straight.</div>
+            </div>
+        </div>
+
+        <div class="flex-row" style="gap: 15px;">
+            <button class="glass-btn" style="flex:1; padding: 18px;" onclick="nextEvent()">Skip</button>
+            <button id="btn-main-action" class="glass-btn btn-primary btn-lg" style="flex:2" onclick="playerAction()">DONE</button>
+        </div>
+    </div>
+
+    <!-- EDITOR OVERLAY -->
+    <div id="view-editor" class="hidden">
+        <div style="background: white; padding: 15px 20px; display: flex; justify-content: space-between; border-bottom: 1px solid #eee;">
+            <span style="font-weight: 700;">Edit Plan</span>
+            <button class="glass-btn" style="padding: 5px 15px;" onclick="closeEditor()">Save</button>
+        </div>
+        <div class="scroll-container" id="editor-list">
+            <!-- Inputs injected here -->
+        </div>
+        <div style="padding: 20px; text-align: center;">
+            <button class="glass-btn" style="color: var(--danger)" onclick="resetPlan()">Reset to Default</button>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA WITH DESCRIPTIONS ---
+        const DEFAULT_PLAN = {
+            id: "glass_plan_v1",
+            sections: [
+                {
+                    title: "熱身 Warm Up",
+                    repeats: 1,
+                    sectionRest: 0,
+                    items: [
+                        { name: "原地踏步/跳繩", type: "timer", val: 30, rest: 0, icon: "🔥", desc: "輕鬆踏步或模擬跳繩，保持呼吸暢順，提升體溫。" },
+                        { name: "手臂繞圈", type: "reps", val: 10, rest: 0, icon: "🙆", desc: "向前10次，向後10次。幅度要大，放鬆肩關節。" },
+                        { name: "貓牛式伸展", type: "reps", val: 10, rest: 0, icon: "🐈", desc: "手撐地，吸氣塌腰抬頭，呼氣拱背低頭。感受脊椎逐節郁動。" }
+                    ]
+                },
+                {
+                    title: "Push Up 組合",
+                    repeats: 2,
+                    sectionRest: 60, // Rest between sets
+                    items: [
+                        { name: "標準 Push Up", type: "reps", val: 12, rest: 30, icon: "💪", desc: "手掌肩下，身直線。落去肘向後45度，胸近地；上嚟推直。做唔到就跪地。" },
+                        { name: "Diamond Push Up", type: "reps", val: 8, rest: 30, icon: "💠", desc: "拇指食指貼成鑽石形。落去手肘貼身，針對三頭肌。太難可跪地做。" },
+                        { name: "Wide Push Up", type: "reps", val: 10, rest: 30, icon: "↔️", desc: "手闊過肩1.5倍。落去胸向地，推返上。勿聳肩、勿塌腰，針對胸外側。" }
+                    ]
+                },
+                {
+                    title: "腹肌專項 Abs",
+                    repeats: 2,
+                    sectionRest: 60,
+                    items: [
+                        { name: "Plank 棒式", type: "timer", val: 45, rest: 0, icon: "🧱", desc: "肘肩下，前臂貼地。收肚夾臀，背平。腰塌就停一停。" },
+                        { name: "Dead Bug 死蟲式", type: "reps", val: 20, rest: 0, icon: "🐞", desc: "平躺手向天，膝90度。伸直右手左腳，下背緊貼地面。左右交替共20下。" },
+                        { name: "Bicycle Crunch", type: "reps", val: 20, rest: 0, icon: "🚲", desc: "手輕掂耳，捲腹。右肘掂左膝，右腳伸直。左右交替，節奏要穩。" },
+                        { name: "Mountain Climber", type: "reps", val: 20, rest: 30, icon: "🧗", desc: "高板式，身直線。輪流將膝拉向胸。核心收緊，屁股唔好升太高。" }
+                    ]
+                },
+                {
+                    title: "收操 Cool Down",
+                    repeats: 1,
+                    sectionRest: 0,
+                    items: [
+                        { name: "眼鏡蛇式", type: "timer", val: 40, rest: 0, icon: "🐍", desc: "俯臥，手推地抬起上身，恥骨貼地，伸展腹部。" },
+                        { name: "嬰兒式", type: "timer", val: 40, rest: 0, icon: "👶", desc: "跪姿，臀坐腳踭，身趴前，放鬆下背。" },
+                        { name: "坐姿前彎", type: "timer", val: 40, rest: 0, icon: "🧘", desc: "坐直腳伸直，身體向前摺，手捉腳尖/小腿，伸展腿後側。" }
+                    ]
+                }
+            ]
+        };
+
+        let currentPlan = JSON.parse(localStorage.getItem('glassFitPlan')) || DEFAULT_PLAN;
+
+        // --- APP STATE ---
+        let queue = [];
+        let qIndex = 0;
+        let timer = null;
+        let timeLeft = 0;
+        let isPaused = false;
+
+        // --- RENDER HOME ---
+        function renderHome() {
+            const container = document.getElementById('plan-container');
+            container.innerHTML = "";
+            
+            currentPlan.sections.forEach((sec, sIdx) => {
+                // Section Title
+                const h = document.createElement('div');
+                h.className = "section-title";
+                h.innerHTML = `<span>${sec.title}</span> <span class="section-meta">${sec.repeats > 1 ? sec.repeats + ' Sets' : '1 Set'}</span>`;
+                container.appendChild(h);
+
+                // List Group
+                const grp = document.createElement('div');
+                grp.className = "list-group";
+                
+                let innerHTML = "";
+                sec.items.forEach(item => {
+                    const badge = item.type === 'timer' ? `${item.val}s` : `x${item.val}`;
+                    const restBadge = item.rest > 0 ? `<span class="text-xs">Rest ${item.rest}s</span>` : '';
+                    
+                    innerHTML += `
+                    <div class="list-item">
+                        <div class="item-icon">${item.icon}</div>
+                        <div class="item-content">
+                            <div class="item-head">
+                                <span class="item-name">${item.name}</span>
+                                <span class="item-metric">${badge}</span>
+                            </div>
+                            <div class="text-sm clamp-2">${item.desc}</div>
+                            <div style="margin-top:4px;">${restBadge}</div>
+                        </div>
+                    </div>`;
+                });
+                grp.innerHTML = innerHTML;
+                container.appendChild(grp);
+            });
+        }
+
+        // --- EDITOR LOGIC ---
+        function openEditor() {
+            document.getElementById('view-editor').classList.remove('hidden');
+            renderEditor();
+        }
+        function closeEditor() {
+            document.getElementById('view-editor').classList.add('hidden');
+            localStorage.setItem('glassFitPlan', JSON.stringify(currentPlan));
+            renderHome();
+        }
+        function renderEditor() {
+            const list = document.getElementById('editor-list');
+            list.innerHTML = "";
+            currentPlan.sections.forEach((sec, sIdx) => {
+                const card = document.createElement('div');
+                card.className = "glass-panel";
+                card.style.padding = "20px";
+                card.style.marginBottom = "20px";
+                card.style.background = "white"; // Override for editor readability
+                
+                let itemsHTML = "";
+                sec.items.forEach((item, iIdx) => {
+                    itemsHTML += `
+                    <div style="border-left: 2px solid var(--accent); padding-left: 10px; margin-bottom: 15px;">
+                        <input class="edit-input" style="font-weight:600" value="${item.name}" onchange="updateItem(${sIdx},${iIdx},'name',this.value)">
+                        <div class="flex-row" style="gap:5px">
+                            <input type="number" class="edit-input" style="width:70px" value="${item.val}" onchange="updateItem(${sIdx},${iIdx},'val',this.value)">
+                            <select class="edit-input" style="width:80px" onchange="updateItem(${sIdx},${iIdx},'type',this.value)">
+                                <option value="reps" ${item.type=='reps'?'selected':''}>Reps</option>
+                                <option value="timer" ${item.type=='timer'?'selected':''}>Secs</option>
+                            </select>
+                            <input type="number" class="edit-input" style="width:70px" placeholder="Rest" value="${item.rest}" onchange="updateItem(${sIdx},${iIdx},'rest',this.value)">
+                        </div>
+                        <textarea class="edit-textarea" placeholder="Description/Remarks" onchange="updateItem(${sIdx},${iIdx},'desc',this.value)">${item.desc}</textarea>
+                    </div>`;
+                });
+
+                card.innerHTML = `
+                    <div class="flex-row justify-between" style="margin-bottom:10px">
+                        <input class="edit-input" style="font-weight:bold; width:70%" value="${sec.title}" onchange="updateSec(${sIdx},'title',this.value)">
+                        <div class="flex-row"><input type="number" class="edit-input" style="width:50px; text-align:center" value="${sec.repeats}" onchange="updateSec(${sIdx},'repeats',this.value)"> <span class="text-xs">Sets</span></div>
+                    </div>
+                    ${itemsHTML}
+                `;
+                list.appendChild(card);
+            });
+        }
+        function updateItem(sIdx, iIdx, key, val) {
+            if(key==='val'||key==='rest') val = parseInt(val);
+            currentPlan.sections[sIdx].items[iIdx][key] = val;
+        }
+        function updateSec(sIdx, key, val) {
+            currentPlan.sections[sIdx][key] = key==='repeats'?parseInt(val):val;
+        }
+        function resetPlan() {
+            if(confirm("Reset to default?")) {
+                currentPlan = JSON.parse(JSON.stringify(DEFAULT_PLAN));
+                renderEditor();
+            }
+        }
+
+        // --- PLAYER LOGIC ---
+        function startWorkout() {
+            // Build Queue
+            queue = [];
+            queue.push({ type:'msg', title:'Get Ready', desc:'Prepare your mat and water.', val:5, isRest:true });
+
+            currentPlan.sections.forEach(sec => {
+                for(let r=0; r<sec.repeats; r++) {
+                    sec.items.forEach(item => {
+                        // Action
+                        queue.push({
+                            type: item.type, // 'reps' or 'timer'
+                            title: item.name,
+                            desc: item.desc,
+                            val: item.val,
+                            isRest: false
+                        });
+                        // Item Rest
+                        if(item.rest > 0) {
+                            queue.push({ type:'timer', title:'Rest', desc:'Shake it off.', val: item.rest, isRest: true });
+                        }
+                    });
+                    // Section Rest (if not last repeat)
+                    if(sec.sectionRest > 0 && r < sec.repeats - 1) {
+                         queue.push({ type:'timer', title:'Set Break', desc:'Big rest between sets.', val: sec.sectionRest, isRest: true });
+                    }
+                }
+            });
+            queue.push({ type:'finish', title:'Completed!', desc:'Good job.', val:0 });
+            
+            qIndex = 0;
+            document.getElementById('view-player').classList.remove('player-hidden');
+            loadEvent(0);
+        }
+
+        function loadEvent(idx) {
+            clearInterval(timer);
+            const evt = queue[idx];
+            const pTitle = document.getElementById('player-title');
+            const pDesc = document.getElementById('player-desc');
+            const pLabel = document.getElementById('player-label');
+            const tVal = document.getElementById('timer-val');
+            const tUnit = document.getElementById('timer-unit');
+            const btn = document.getElementById('btn-main-action');
+            const bar = document.getElementById('player-bar');
+
+            // Progress
+            document.getElementById('player-progress').innerText = `${idx + 1} / ${queue.length}`;
+            bar.style.width = `${((idx)/queue.length)*100}%`;
+
+            if(evt.type === 'finish') {
+                pTitle.innerText = "Completed!";
+                pDesc.innerText = "Take a protein shake.";
+                tVal.innerText = "🎉";
+                tUnit.innerText = "";
+                btn.innerText = "CLOSE";
+                btn.onclick = quitWorkout;
+                return;
+            }
+
+            pTitle.innerText = evt.title;
+            pDesc.innerText = evt.desc;
+            
+            if(evt.isRest) {
+                pLabel.innerText = "REST";
+                pLabel.style.color = "#8E8E93";
+            } else {
+                pLabel.innerText = "WORKOUT";
+                pLabel.style.color = "var(--accent)";
+            }
+
+            // Logic
+            if(evt.type === 'reps') {
+                tVal.innerText = evt.val;
+                tUnit.innerText = "REPS";
+                btn.innerText = "DONE";
+                btn.classList.add('btn-primary');
+                btn.onclick = nextEvent;
+                isPaused = true; 
+            } else {
+                // Timer (Work or Rest)
+                timeLeft = evt.val;
+                tVal.innerText = formatTime(timeLeft);
+                tUnit.innerText = "TIME";
+                btn.innerText = "PAUSE";
+                btn.classList.remove('btn-primary'); // Ghost style for timer
+                btn.onclick = togglePause;
+                isPaused = false;
+                startTimer();
+            }
+        }
+
+        function startTimer() {
+            timer = setInterval(() => {
+                if(!isPaused) {
+                    timeLeft--;
+                    document.getElementById('timer-val').innerText = formatTime(timeLeft);
+                    if(timeLeft <= 0) {
+                        clearInterval(timer);
+                        nextEvent();
+                    }
+                }
+            }, 1000);
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            const btn = document.getElementById('btn-main-action');
+            btn.innerText = isPaused ? "RESUME" : "PAUSE";
+            btn.classList.toggle('btn-primary');
+        }
+
+        function nextEvent() {
+            qIndex++;
+            if(qIndex < queue.length) {
+                loadEvent(qIndex);
+            } else {
+                quitWorkout();
+            }
+        }
+
+        function playerAction() {
+            // Placeholder for btn click based on context
+        }
+
+        function quitWorkout() {
+            clearInterval(timer);
+            document.getElementById('view-player').classList.add('player-hidden');
+        }
+
+        function switchView(view) {
+           // Simple router if needed, currently mainly using overlays
+        }
+
+        function formatTime(s) {
+            const m = Math.floor(s/60);
+            const sec = s%60;
+            return `${m}:${sec<10?'0'+sec:sec}`;
+        }
+
+        // Init
+        renderHome();
+    </script>
+</body>
+</html>
