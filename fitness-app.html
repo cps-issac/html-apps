@@ -3,567 +3,539 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- iOS Display Configuration -->
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#F0F4F8">
-    <!-- Force Light Mode to avoid auto-darkening turning cards blue -->
+    <!-- 'default' gives white status bar with black text -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default"> 
+    <meta name="theme-color" content="#FFFFFF">
+    <!-- Force Light Mode -->
     <meta name="color-scheme" content="light"> 
     
-    <title>Glass Fit Plan</title>
+    <title>Daily Fit Plan</title>
     <style>
         :root {
-            /* Palette - Clean, Light, Glassy */
-            --bg-base: #F0F4F8;
-            --glass-surface: rgba(255, 255, 255, 0.65);
-            --glass-border: rgba(255, 255, 255, 0.5);
-            --glass-highlight: rgba(255, 255, 255, 0.8);
-            --blur-amt: 20px;
-            
-            --text-primary: #1C1C1E;
-            --text-secondary: #636366;
-            --text-tertiary: #8E8E93;
-            
-            --accent: #007AFF; /* Apple Blue */
-            --accent-gradient: linear-gradient(135deg, #007AFF, #00C7BE);
+            /* Palette - Strictly Light Mode */
+            --bg-body: #F2F2F7; /* Apple System Gray 6 */
+            --bg-card: #FFFFFF;
+            --text-primary: #000000;
+            --text-secondary: #8E8E93;
+            --accent: #007AFF; /* System Blue */
             --danger: #FF3B30;
+            --separator: #E5E5EA;
             
-            --radius-l: 24px;
-            --radius-m: 16px;
-            --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.04);
-            --shadow-crisp: 0 2px 8px rgba(0, 0, 0, 0.03);
+            --radius-l: 16px;
+            --radius-m: 10px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        /* RESET & BASE */
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif; }
+        /* RESET */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; }
         
-        body {
+        body, html {
             margin: 0; padding: 0;
-            background: var(--bg-base);
-            /* Subtle Mesh Gradient Background */
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(200, 230, 255, 0.5) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(230, 255, 230, 0.4) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(255, 230, 230, 0.4) 0px, transparent 50%);
-            background-attachment: fixed;
+            background-color: var(--bg-body);
             color: var(--text-primary);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            /* Safe Area for Notch */
-            padding-top: env(safe-area-inset-top);
+            height: 100%;
+            /* Force white background to prevent dark mode bleed */
+            background: var(--bg-body) !important; 
         }
 
         /* UTILS */
         .hidden { display: none !important; }
         .flex-row { display: flex; align-items: center; }
+        .flex-col { display: flex; flex-direction: column; }
         .justify-between { justify-content: space-between; }
-        .text-sm { font-size: 13px; line-height: 1.4; color: var(--text-secondary); }
-        .text-xs { font-size: 11px; color: var(--text-tertiary); letter-spacing: 0.5px; text-transform: uppercase; font-weight: 600; }
-        .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .gap-2 { gap: 8px; }
+        .text-sm { font-size: 13px; color: var(--text-secondary); }
+        .text-xs { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .bold { font-weight: 600; }
 
-        /* GLASS COMPONENTS */
-        .glass-panel {
-            background: var(--glass-surface);
-            backdrop-filter: blur(var(--blur-amt));
-            -webkit-backdrop-filter: blur(var(--blur-amt));
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--shadow-soft);
-            border-radius: var(--radius-l);
-        }
-
-        .glass-btn {
-            background: rgba(255,255,255,0.5);
-            border: 1px solid rgba(0,0,0,0.05);
-            padding: 10px 16px;
-            border-radius: 30px;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--accent);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .glass-btn:active { background: rgba(255,255,255,0.8); transform: scale(0.96); }
-        .btn-primary { background: var(--text-primary); color: white; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .btn-lg { width: 100%; padding: 18px; font-size: 18px; border-radius: 20px; }
-
-        /* SCROLL VIEW */
-        .scroll-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            padding-bottom: 120px; /* Space for bottom nav */
-        }
+        /* BUTTONS */
+        .btn { border: none; background: none; cursor: pointer; padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .btn:active { opacity: 0.6; background: rgba(0,0,0,0.05); }
+        .btn-primary { background: var(--text-primary); color: white; padding: 12px 20px; border-radius: 12px; font-weight: 600; width: 100%; font-size: 16px; }
+        .btn-icon { font-size: 18px; width: 32px; height: 32px; color: var(--accent); }
+        .btn-danger { color: var(--danger); }
+        .btn-add { background: var(--bg-card); border: 1px solid var(--accent); color: var(--accent); width: 100%; padding: 10px; font-weight: 600; margin-top: 10px; }
 
         /* HEADER */
         header {
-            padding: 10px 24px 20px;
-            display: flex; justify-content: space-between; align-items: flex-end;
-        }
-        h1 { font-size: 32px; font-weight: 700; margin: 0; letter-spacing: -0.5px; }
-
-        /* WORKOUT LIST STYLES */
-        .section-title {
-            margin: 24px 4px 12px;
-            font-size: 20px; font-weight: 700;
-            display: flex; justify-content: space-between; align-items: baseline;
-        }
-        .section-meta { font-size: 14px; color: var(--accent); font-weight: 500; background: rgba(0,122,255,0.1); padding: 4px 10px; border-radius: 12px; }
-
-        .list-group {
-            background: var(--glass-surface);
-            border-radius: var(--radius-l);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid white;
-            box-shadow: var(--shadow-crisp);
-            overflow: hidden;
+            background: var(--bg-card);
+            padding: calc(env(safe-area-inset-top) + 10px) 20px 15px;
+            border-bottom: 1px solid var(--separator);
+            position: sticky; top: 0; z-index: 10;
         }
 
-        .list-item {
-            padding: 16px;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            display: flex;
-            gap: 12px;
-            transition: background 0.2s;
-        }
+        /* SCROLL AREAS */
+        .scroll-view { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 100px; }
+
+        /* HOME LIST */
+        .card { background: var(--bg-card); border-radius: var(--radius-l); padding: 16px; margin-bottom: 16px; box-shadow: var(--shadow); }
+        .section-header { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: baseline; }
+        .list-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--separator); }
         .list-item:last-child { border-bottom: none; }
-        .list-item:active { background: rgba(255,255,255,0.5); }
+        .icon-box { width: 36px; height: 36px; background: #F2F2F7; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+        
+        /* EDITOR STYLES (Compact) */
+        .editor-section { background: var(--bg-card); border-radius: var(--radius-l); overflow: hidden; margin-bottom: 20px; box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,0.05); }
+        .editor-header { background: #E5E5EA; padding: 10px 15px; display: flex; gap: 10px; align-items: center; }
+        .editor-item-row { padding: 10px 15px; border-bottom: 1px solid var(--separator); background: white; }
+        
+        .inp { background: transparent; border: 1px solid #ddd; padding: 6px; border-radius: 6px; font-size: 14px; -webkit-appearance: none; }
+        .inp-bare { border: none; background: transparent; font-size: 16px; font-weight: 600; width: 100%; padding: 0; }
+        .inp-sm { width: 60px; text-align: center; }
+        .inp-area { width: 100%; border: 1px solid #eee; padding: 8px; font-size: 12px; border-radius: 6px; resize: none; margin-top: 5px; height: 40px; }
 
-        .item-icon {
-            width: 36px; height: 36px;
-            background: linear-gradient(135deg, #f0f0f0, #e6e6e6);
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px;
-            flex-shrink: 0;
-        }
-        
-        .item-content { flex: 1; min-width: 0; }
-        .item-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-        .item-name { font-weight: 600; font-size: 16px; color: var(--text-primary); }
-        .item-metric { font-weight: 600; font-size: 14px; color: var(--text-primary); background: rgba(0,0,0,0.04); padding: 2px 8px; border-radius: 6px; }
-        
         /* PLAYER OVERLAY */
         #view-player {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(245, 247, 250, 0.95);
-            backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
-            z-index: 200;
-            display: flex; flex-direction: column;
-            padding: calc(env(safe-area-inset-top) + 20px) 24px 40px;
-            text-align: center;
-            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
-        .player-hidden { transform: translateY(100%); }
-
-        .player-card {
-            flex: 1;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: white;
-            border-radius: 32px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.08);
-            margin: 20px 0;
-            padding: 30px 20px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        /* Progress Bar in Player */
-        .progress-track { position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: #f0f0f0; }
-        .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
-
-        .timer-big { font-size: 72px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -3px; color: var(--text-primary); margin: 10px 0; }
-        .instruction-box { background: #F9F9F9; padding: 15px; border-radius: 16px; text-align: left; width: 100%; margin-top: 10px; max-height: 120px; overflow-y: auto; }
-
-        /* EDITOR MODAL */
-        #view-editor {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #F2F2F7;
-            z-index: 100;
+            background: #FFFFFF; z-index: 100;
             display: flex; flex-direction: column;
             padding-top: env(safe-area-inset-top);
         }
+        .player-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+        .timer-display { font-size: 80px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; margin: 20px 0; letter-spacing: -2px; }
+        .desc-box { background: #F2F2F7; padding: 15px; border-radius: 12px; text-align: left; width: 100%; font-size: 14px; line-height: 1.4; color: var(--text-secondary); margin-bottom: 20px; }
         
-        .edit-input { width: 100%; padding: 12px; background: white; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; margin-bottom: 8px; font-size: 16px; }
-        .edit-textarea { width: 100%; padding: 12px; background: white; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; font-size: 14px; min-height: 60px; font-family: inherit; resize: none; }
-
-        /* Bottom Menu */
-        .fab-container {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            background: rgba(30,30,30,0.8);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            padding: 8px;
-            border-radius: 40px;
-            display: flex; gap: 5px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            z-index: 90;
+        /* BOTTOM BAR */
+        .bottom-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: var(--bg-card); border-top: 1px solid var(--separator);
+            padding: 10px 0 25px;
+            display: flex; justify-content: space-around;
+            z-index: 50;
         }
-        .fab-btn {
-            background: transparent; color: rgba(255,255,255,0.7);
-            border: none; padding: 12px 20px;
-            border-radius: 30px; font-weight: 600; font-size: 14px;
-        }
-        .fab-btn.active { background: white; color: black; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .nav-btn { color: #999; font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; }
+        .nav-btn.active { color: var(--accent); }
+        .nav-icon { font-size: 22px; }
 
     </style>
 </head>
 <body>
 
-    <!-- HOME VIEW -->
-    <header>
-        <div>
-            <div class="text-xs">TODAY'S PLAN</div>
-            <h1>Daily Fit</h1>
+    <!-- HEADER -->
+    <header id="app-header">
+        <div class="flex-row justify-between">
+            <h1 style="margin:0; font-size: 24px;">Daily Plan</h1>
+            <button class="btn btn-primary" style="width:auto; padding: 8px 16px; font-size: 14px;" onclick="startWorkout()">Start ▶</button>
         </div>
-        <div onclick="startWorkout()" style="background: var(--text-primary); color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); cursor: pointer;">▶</div>
     </header>
 
-    <div id="view-home" class="scroll-container">
-        <!-- JS will render sections here -->
+    <!-- HOME VIEW -->
+    <div id="view-home" class="scroll-view">
         <div id="plan-container"></div>
-        <div style="height: 50px;"></div>
     </div>
 
-    <!-- FLOATING MENU -->
-    <div class="fab-container">
-        <button class="fab-btn active" onclick="switchView('home')">Home</button>
-        <button class="fab-btn" onclick="openEditor()">Edit</button>
+    <!-- EDITOR VIEW -->
+    <div id="view-editor" class="scroll-view hidden" style="background: #F2F2F7;">
+        <div class="flex-row justify-between" style="margin-bottom:15px;">
+            <h2 style="margin:0">Edit Master Plan</h2>
+            <button class="btn" style="color:var(--accent); font-weight:600" onclick="saveEditor()">Done</button>
+        </div>
+        
+        <div id="editor-list"></div>
+        
+        <button class="btn btn-add" onclick="addNewSection()">+ Add New Section</button>
+        <button class="btn" style="width:100%; color: var(--danger); margin-top: 30px;" onclick="resetToDefault()">Reset to Defaults</button>
+        <div style="height:50px"></div>
     </div>
 
-    <!-- PLAYER OVERLAY -->
-    <div id="view-player" class="player-hidden">
-        <div class="flex-row justify-between" style="padding-bottom: 10px;">
-            <div class="text-xs" id="player-progress">1 / 15</div>
-            <button class="glass-btn" onclick="quitWorkout()" style="color:var(--text-secondary)">✕ Close</button>
+    <!-- PLAYER VIEW -->
+    <div id="view-player" class="hidden">
+        <div style="padding: 15px 20px; display: flex; justify-content: space-between;">
+            <span class="text-xs" id="progress-txt">1 / 10</span>
+            <button class="btn" onclick="quitWorkout()">✕</button>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div style="height: 4px; background: #eee; width: 100%;">
+            <div id="progress-fill" style="height: 100%; background: var(--accent); width: 0%;"></div>
         </div>
 
-        <div class="player-card">
-            <div class="progress-track"><div id="player-bar" class="progress-fill"></div></div>
+        <div class="player-content">
+            <div class="text-xs bold" id="player-type" style="color:var(--accent)">READY</div>
+            <h2 id="player-title" style="font-size: 32px; margin: 10px 0;">Get Ready</h2>
             
-            <div class="text-xs" id="player-label" style="color: var(--accent); margin-bottom: 10px;">WORKOUT</div>
-            <h2 id="player-title" style="font-size: 32px; margin: 0; line-height: 1.1;">Push Up</h2>
+            <div class="timer-display" id="timer-val">00</div>
             
-            <div id="timer-box">
-                <div id="timer-val" class="timer-big">15</div>
-                <div id="timer-unit" class="text-xs" style="margin-top:-10px">REPS</div>
+            <div class="desc-box">
+                <strong style="display:block; margin-bottom:4px; color:black;">Instructions:</strong>
+                <span id="player-desc">...</span>
             </div>
 
-            <div class="instruction-box">
-                <div class="text-xs" style="margin-bottom: 4px; font-weight: bold;">HOW TO:</div>
-                <div id="player-desc" class="text-sm">Keep your back straight.</div>
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <button class="btn" style="background: #eee; flex: 1; padding: 15px;" onclick="nextStep()">Skip</button>
+                <button id="main-btn" class="btn btn-primary" style="flex: 2;" onclick="toggleTimer()">Start</button>
             </div>
-        </div>
-
-        <div class="flex-row" style="gap: 15px;">
-            <button class="glass-btn" style="flex:1; padding: 18px;" onclick="nextEvent()">Skip</button>
-            <button id="btn-main-action" class="glass-btn btn-primary btn-lg" style="flex:2" onclick="playerAction()">DONE</button>
         </div>
     </div>
 
-    <!-- EDITOR OVERLAY -->
-    <div id="view-editor" class="hidden">
-        <div style="background: white; padding: 15px 20px; display: flex; justify-content: space-between; border-bottom: 1px solid #eee;">
-            <span style="font-weight: 700;">Edit Plan</span>
-            <button class="glass-btn" style="padding: 5px 15px;" onclick="closeEditor()">Save</button>
-        </div>
-        <div class="scroll-container" id="editor-list">
-            <!-- Inputs injected here -->
-        </div>
-        <div style="padding: 20px; text-align: center;">
-            <button class="glass-btn" style="color: var(--danger)" onclick="resetPlan()">Reset to Default</button>
-        </div>
+    <!-- NAVIGATION -->
+    <div class="bottom-bar">
+        <button class="nav-btn active" onclick="switchTab('home')" id="tab-home">
+            <span class="nav-icon">🏠</span>Home
+        </button>
+        <button class="nav-btn" onclick="switchTab('editor')" id="tab-editor">
+            <span class="nav-icon">📝</span>Edit Plan
+        </button>
     </div>
 
     <script>
-        // --- DATA WITH DESCRIPTIONS ---
-        const DEFAULT_PLAN = {
-            id: "glass_plan_v1",
+        // --- DEFAULT DATA ---
+        const DEFAULT_DATA = {
             sections: [
                 {
-                    title: "熱身 Warm Up",
+                    title: "熱身 (Warm Up)",
                     repeats: 1,
                     sectionRest: 0,
                     items: [
-                        { name: "原地踏步/跳繩", type: "timer", val: 30, rest: 0, icon: "🔥", desc: "輕鬆踏步或模擬跳繩，保持呼吸暢順，提升體溫。" },
-                        { name: "手臂繞圈", type: "reps", val: 10, rest: 0, icon: "🙆", desc: "向前10次，向後10次。幅度要大，放鬆肩關節。" },
-                        { name: "貓牛式伸展", type: "reps", val: 10, rest: 0, icon: "🐈", desc: "手撐地，吸氣塌腰抬頭，呼氣拱背低頭。感受脊椎逐節郁動。" }
+                        { name: "原地踏步/跳繩", type: "timer", val: 30, rest: 0, icon: "🔥", desc: "輕鬆踏步或模擬跳繩，保持呼吸暢順。" },
+                        { name: "手臂繞圈", type: "reps", val: 10, rest: 0, icon: "🙆", desc: "向前10次，向後10次。幅度要大。" },
+                        { name: "貓牛式伸展", type: "reps", val: 10, rest: 0, icon: "🐈", desc: "吸氣塌腰抬頭，呼氣拱背低頭。" }
                     ]
                 },
                 {
                     title: "Push Up 組合",
                     repeats: 2,
-                    sectionRest: 60, // Rest between sets
+                    sectionRest: 60,
                     items: [
-                        { name: "標準 Push Up", type: "reps", val: 12, rest: 30, icon: "💪", desc: "手掌肩下，身直線。落去肘向後45度，胸近地；上嚟推直。做唔到就跪地。" },
-                        { name: "Diamond Push Up", type: "reps", val: 8, rest: 30, icon: "💠", desc: "拇指食指貼成鑽石形。落去手肘貼身，針對三頭肌。太難可跪地做。" },
-                        { name: "Wide Push Up", type: "reps", val: 10, rest: 30, icon: "↔️", desc: "手闊過肩1.5倍。落去胸向地，推返上。勿聳肩、勿塌腰，針對胸外側。" }
+                        { name: "標準 Push Up", type: "reps", val: 12, rest: 30, icon: "💪", desc: "手掌肩下，身直線。肘向後45度。" },
+                        { name: "Diamond Push Up", type: "reps", val: 8, rest: 30, icon: "💠", desc: "拇指食指貼成鑽石形。針對三頭肌。" },
+                        { name: "Wide Push Up", type: "reps", val: 10, rest: 30, icon: "↔️", desc: "手闊過肩1.5倍。針對胸外側。" }
                     ]
                 },
                 {
-                    title: "腹肌專項 Abs",
+                    title: "腹肌專項",
                     repeats: 2,
                     sectionRest: 60,
                     items: [
-                        { name: "Plank 棒式", type: "timer", val: 45, rest: 0, icon: "🧱", desc: "肘肩下，前臂貼地。收肚夾臀，背平。腰塌就停一停。" },
-                        { name: "Dead Bug 死蟲式", type: "reps", val: 20, rest: 0, icon: "🐞", desc: "平躺手向天，膝90度。伸直右手左腳，下背緊貼地面。左右交替共20下。" },
-                        { name: "Bicycle Crunch", type: "reps", val: 20, rest: 0, icon: "🚲", desc: "手輕掂耳，捲腹。右肘掂左膝，右腳伸直。左右交替，節奏要穩。" },
-                        { name: "Mountain Climber", type: "reps", val: 20, rest: 30, icon: "🧗", desc: "高板式，身直線。輪流將膝拉向胸。核心收緊，屁股唔好升太高。" }
+                        { name: "Plank 棒式", type: "timer", val: 45, rest: 0, icon: "🧱", desc: "肘肩下，前臂貼地。收肚夾臀。" },
+                        { name: "Dead Bug", type: "reps", val: 20, rest: 0, icon: "🐞", desc: "平躺手向天，膝90度。對側手腳伸直。" },
+                        { name: "Bicycle Crunch", type: "reps", val: 20, rest: 0, icon: "🚲", desc: "手輕掂耳。右肘掂左膝，左右交替。" },
+                        { name: "Mountain Climber", type: "reps", val: 20, rest: 30, icon: "🧗", desc: "高板式，膝拉向胸。屁股勿升太高。" }
                     ]
                 },
                 {
-                    title: "收操 Cool Down",
+                    title: "收操 (Cool Down)",
                     repeats: 1,
                     sectionRest: 0,
                     items: [
-                        { name: "眼鏡蛇式", type: "timer", val: 40, rest: 0, icon: "🐍", desc: "俯臥，手推地抬起上身，恥骨貼地，伸展腹部。" },
-                        { name: "嬰兒式", type: "timer", val: 40, rest: 0, icon: "👶", desc: "跪姿，臀坐腳踭，身趴前，放鬆下背。" },
-                        { name: "坐姿前彎", type: "timer", val: 40, rest: 0, icon: "🧘", desc: "坐直腳伸直，身體向前摺，手捉腳尖/小腿，伸展腿後側。" }
+                        { name: "眼鏡蛇式", type: "timer", val: 40, rest: 0, icon: "🐍", desc: "俯臥，手推地抬起上身，伸展腹部。" },
+                        { name: "嬰兒式", type: "timer", val: 40, rest: 0, icon: "👶", desc: "跪姿，臀坐腳踭，身趴前。" },
+                        { name: "坐姿前彎", type: "timer", val: 40, rest: 0, icon: "🧘", desc: "坐直腳伸直，身體向前摺，伸展腿後。" }
                     ]
                 }
             ]
         };
 
-        let currentPlan = JSON.parse(localStorage.getItem('glassFitPlan')) || DEFAULT_PLAN;
+        let plan = JSON.parse(localStorage.getItem('myFitPlan_v2')) || DEFAULT_DATA;
 
-        // --- APP STATE ---
-        let queue = [];
-        let qIndex = 0;
-        let timer = null;
-        let timeLeft = 0;
-        let isPaused = false;
+        // --- APP LOGIC ---
 
-        // --- RENDER HOME ---
-        function renderHome() {
-            const container = document.getElementById('plan-container');
-            container.innerHTML = "";
-            
-            currentPlan.sections.forEach((sec, sIdx) => {
-                // Section Title
-                const h = document.createElement('div');
-                h.className = "section-title";
-                h.innerHTML = `<span>${sec.title}</span> <span class="section-meta">${sec.repeats > 1 ? sec.repeats + ' Sets' : '1 Set'}</span>`;
-                container.appendChild(h);
-
-                // List Group
-                const grp = document.createElement('div');
-                grp.className = "list-group";
-                
-                let innerHTML = "";
-                sec.items.forEach(item => {
-                    const badge = item.type === 'timer' ? `${item.val}s` : `x${item.val}`;
-                    const restBadge = item.rest > 0 ? `<span class="text-xs">Rest ${item.rest}s</span>` : '';
-                    
-                    innerHTML += `
-                    <div class="list-item">
-                        <div class="item-icon">${item.icon}</div>
-                        <div class="item-content">
-                            <div class="item-head">
-                                <span class="item-name">${item.name}</span>
-                                <span class="item-metric">${badge}</span>
-                            </div>
-                            <div class="text-sm clamp-2">${item.desc}</div>
-                            <div style="margin-top:4px;">${restBadge}</div>
-                        </div>
-                    </div>`;
-                });
-                grp.innerHTML = innerHTML;
-                container.appendChild(grp);
-            });
-        }
-
-        // --- EDITOR LOGIC ---
-        function openEditor() {
-            document.getElementById('view-editor').classList.remove('hidden');
-            renderEditor();
-        }
-        function closeEditor() {
-            document.getElementById('view-editor').classList.add('hidden');
-            localStorage.setItem('glassFitPlan', JSON.stringify(currentPlan));
+        function init() {
             renderHome();
         }
-        function renderEditor() {
-            const list = document.getElementById('editor-list');
-            list.innerHTML = "";
-            currentPlan.sections.forEach((sec, sIdx) => {
-                const card = document.createElement('div');
-                card.className = "glass-panel";
-                card.style.padding = "20px";
-                card.style.marginBottom = "20px";
-                card.style.background = "white"; // Override for editor readability
-                
-                let itemsHTML = "";
-                sec.items.forEach((item, iIdx) => {
-                    itemsHTML += `
-                    <div style="border-left: 2px solid var(--accent); padding-left: 10px; margin-bottom: 15px;">
-                        <input class="edit-input" style="font-weight:600" value="${item.name}" onchange="updateItem(${sIdx},${iIdx},'name',this.value)">
-                        <div class="flex-row" style="gap:5px">
-                            <input type="number" class="edit-input" style="width:70px" value="${item.val}" onchange="updateItem(${sIdx},${iIdx},'val',this.value)">
-                            <select class="edit-input" style="width:80px" onchange="updateItem(${sIdx},${iIdx},'type',this.value)">
-                                <option value="reps" ${item.type=='reps'?'selected':''}>Reps</option>
-                                <option value="timer" ${item.type=='timer'?'selected':''}>Secs</option>
-                            </select>
-                            <input type="number" class="edit-input" style="width:70px" placeholder="Rest" value="${item.rest}" onchange="updateItem(${sIdx},${iIdx},'rest',this.value)">
-                        </div>
-                        <textarea class="edit-textarea" placeholder="Description/Remarks" onchange="updateItem(${sIdx},${iIdx},'desc',this.value)">${item.desc}</textarea>
-                    </div>`;
-                });
 
-                card.innerHTML = `
-                    <div class="flex-row justify-between" style="margin-bottom:10px">
-                        <input class="edit-input" style="font-weight:bold; width:70%" value="${sec.title}" onchange="updateSec(${sIdx},'title',this.value)">
-                        <div class="flex-row"><input type="number" class="edit-input" style="width:50px; text-align:center" value="${sec.repeats}" onchange="updateSec(${sIdx},'repeats',this.value)"> <span class="text-xs">Sets</span></div>
-                    </div>
-                    ${itemsHTML}
-                `;
-                list.appendChild(card);
-            });
-        }
-        function updateItem(sIdx, iIdx, key, val) {
-            if(key==='val'||key==='rest') val = parseInt(val);
-            currentPlan.sections[sIdx].items[iIdx][key] = val;
-        }
-        function updateSec(sIdx, key, val) {
-            currentPlan.sections[sIdx][key] = key==='repeats'?parseInt(val):val;
-        }
-        function resetPlan() {
-            if(confirm("Reset to default?")) {
-                currentPlan = JSON.parse(JSON.stringify(DEFAULT_PLAN));
+        function switchTab(tab) {
+            document.querySelectorAll('.scroll-view').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            
+            if(tab === 'home') {
+                document.getElementById('view-home').classList.remove('hidden');
+                document.getElementById('tab-home').classList.add('active');
+                renderHome();
+            } else {
+                document.getElementById('view-editor').classList.remove('hidden');
+                document.getElementById('tab-editor').classList.add('active');
                 renderEditor();
             }
         }
 
+        // --- RENDER HOME ---
+        function renderHome() {
+            const c = document.getElementById('plan-container');
+            c.innerHTML = "";
+            
+            plan.sections.forEach(sec => {
+                const card = document.createElement('div');
+                card.className = "card";
+                
+                let listHtml = "";
+                sec.items.forEach(item => {
+                    const badge = item.type === 'timer' ? `${item.val}s` : `x${item.val}`;
+                    listHtml += `
+                    <div class="list-item">
+                        <div class="icon-box">${item.icon}</div>
+                        <div style="flex:1">
+                            <div class="flex-row justify-between">
+                                <span class="bold">${item.name}</span>
+                                <span style="background:#eee; padding:2px 8px; border-radius:4px; font-size:12px;">${badge}</span>
+                            </div>
+                            <div class="text-sm" style="margin-top:2px;">${item.desc.substring(0, 30)}...</div>
+                        </div>
+                    </div>`;
+                });
+
+                card.innerHTML = `
+                    <div class="section-header">
+                        <span class="bold" style="font-size:18px">${sec.title}</span>
+                        <span class="text-xs">${sec.repeats} Set(s)</span>
+                    </div>
+                    ${listHtml}
+                `;
+                c.appendChild(card);
+            });
+        }
+
+        // --- RENDER EDITOR (COMPACT & FUNCTIONAL) ---
+        function renderEditor() {
+            const list = document.getElementById('editor-list');
+            list.innerHTML = "";
+
+            plan.sections.forEach((sec, sIdx) => {
+                const secEl = document.createElement('div');
+                secEl.className = "editor-section";
+
+                // Section Header
+                secEl.innerHTML = `
+                    <div class="editor-header">
+                        <div class="flex-col" style="flex:1">
+                            <input class="inp-bare" value="${sec.title}" onchange="updateData('sec-title', ${sIdx}, null, this.value)" placeholder="Section Title">
+                            <div class="flex-row gap-2" style="margin-top:5px;">
+                                <span class="text-xs">Sets:</span>
+                                <input type="number" class="inp inp-sm" value="${sec.repeats}" onchange="updateData('sec-rep', ${sIdx}, null, this.value)">
+                                <span class="text-xs">Set Rest(s):</span>
+                                <input type="number" class="inp inp-sm" value="${sec.sectionRest}" onchange="updateData('sec-rest', ${sIdx}, null, this.value)">
+                            </div>
+                        </div>
+                        <div class="flex-row">
+                            <button class="btn btn-icon" onclick="moveSection(${sIdx}, -1)">▲</button>
+                            <button class="btn btn-icon" onclick="moveSection(${sIdx}, 1)">▼</button>
+                            <button class="btn btn-icon btn-danger" onclick="delSection(${sIdx})">🗑</button>
+                        </div>
+                    </div>
+                `;
+
+                // Items
+                sec.items.forEach((item, iIdx) => {
+                    const row = document.createElement('div');
+                    row.className = "editor-item-row";
+                    row.innerHTML = `
+                        <div class="flex-row gap-2" style="margin-bottom:8px;">
+                            <input class="inp" style="width:40px; text-align:center" value="${item.icon}" onchange="updateData('item-icon', ${sIdx}, ${iIdx}, this.value)">
+                            <input class="inp" style="flex:1; font-weight:600" value="${item.name}" onchange="updateData('item-name', ${sIdx}, ${iIdx}, this.value)">
+                            <button class="btn btn-icon" style="font-size:14px" onclick="delItem(${sIdx}, ${iIdx})">✕</button>
+                        </div>
+                        <div class="flex-row gap-2 justify-between">
+                            <div class="flex-row gap-2">
+                                <select class="inp" onchange="updateData('item-type', ${sIdx}, ${iIdx}, this.value)">
+                                    <option value="reps" ${item.type==='reps'?'selected':''}>Reps</option>
+                                    <option value="timer" ${item.type==='timer'?'selected':''}>Timer</option>
+                                </select>
+                                <input type="number" class="inp inp-sm" value="${item.val}" onchange="updateData('item-val', ${sIdx}, ${iIdx}, this.value)">
+                                <span class="text-xs">Rest:</span>
+                                <input type="number" class="inp inp-sm" value="${item.rest}" onchange="updateData('item-rest', ${sIdx}, ${iIdx}, this.value)">
+                            </div>
+                            <div class="flex-row">
+                                <button class="btn" style="color:var(--accent)" onclick="moveItem(${sIdx}, ${iIdx}, -1)">▲</button>
+                                <button class="btn" style="color:var(--accent)" onclick="moveItem(${sIdx}, ${iIdx}, 1)">▼</button>
+                            </div>
+                        </div>
+                        <textarea class="inp-area" placeholder="How to do..." onchange="updateData('item-desc', ${sIdx}, ${iIdx}, this.value)">${item.desc}</textarea>
+                    `;
+                    secEl.appendChild(row);
+                });
+
+                // Add Item Button
+                const addBtn = document.createElement('div');
+                addBtn.style.padding = "10px";
+                addBtn.innerHTML = `<button class="btn" style="width:100%; color:var(--accent); background:#F9F9F9; border:1px dashed #ccc" onclick="addItem(${sIdx})">+ Add Item</button>`;
+                secEl.appendChild(addBtn);
+
+                list.appendChild(secEl);
+            });
+        }
+
+        // --- DATA MANIPULATION HELPERS ---
+
+        function updateData(key, sIdx, iIdx, val) {
+            if(key === 'sec-title') plan.sections[sIdx].title = val;
+            if(key === 'sec-rep') plan.sections[sIdx].repeats = parseInt(val);
+            if(key === 'sec-rest') plan.sections[sIdx].sectionRest = parseInt(val);
+            
+            if(iIdx !== null) {
+                if(key === 'item-name') plan.sections[sIdx].items[iIdx].name = val;
+                if(key === 'item-icon') plan.sections[sIdx].items[iIdx].icon = val;
+                if(key === 'item-type') plan.sections[sIdx].items[iIdx].type = val;
+                if(key === 'item-val') plan.sections[sIdx].items[iIdx].val = parseInt(val);
+                if(key === 'item-rest') plan.sections[sIdx].items[iIdx].rest = parseInt(val);
+                if(key === 'item-desc') plan.sections[sIdx].items[iIdx].desc = val;
+            }
+        }
+
+        function addNewSection() {
+            plan.sections.push({ title: "New Section", repeats: 1, sectionRest: 0, items: [] });
+            renderEditor();
+        }
+
+        function addItem(sIdx) {
+            plan.sections[sIdx].items.push({ name: "Exercise", type: "reps", val: 10, rest: 0, icon: "⚡", desc: "" });
+            renderEditor();
+        }
+
+        function delSection(sIdx) {
+            if(confirm('Delete section?')) {
+                plan.sections.splice(sIdx, 1);
+                renderEditor();
+            }
+        }
+
+        function delItem(sIdx, iIdx) {
+            plan.sections[sIdx].items.splice(iIdx, 1);
+            renderEditor();
+        }
+
+        function moveSection(sIdx, dir) {
+            if (sIdx + dir < 0 || sIdx + dir >= plan.sections.length) return;
+            [plan.sections[sIdx], plan.sections[sIdx + dir]] = [plan.sections[sIdx + dir], plan.sections[sIdx]];
+            renderEditor();
+        }
+
+        function moveItem(sIdx, iIdx, dir) {
+            const items = plan.sections[sIdx].items;
+            if (iIdx + dir < 0 || iIdx + dir >= items.length) return;
+            [items[iIdx], items[iIdx + dir]] = [items[iIdx + dir], items[iIdx]];
+            renderEditor();
+        }
+
+        function saveEditor() {
+            localStorage.setItem('myFitPlan_v2', JSON.stringify(plan));
+            switchTab('home');
+        }
+
+        function resetToDefault() {
+            if(confirm("Reset everything to default plan?")) {
+                plan = JSON.parse(JSON.stringify(DEFAULT_DATA));
+                saveEditor();
+            }
+        }
+
         // --- PLAYER LOGIC ---
+        let queue = [];
+        let qIdx = 0;
+        let timer = null;
+        let timeLeft = 0;
+        let isPaused = true;
+
         function startWorkout() {
             // Build Queue
             queue = [];
-            queue.push({ type:'msg', title:'Get Ready', desc:'Prepare your mat and water.', val:5, isRest:true });
-
-            currentPlan.sections.forEach(sec => {
-                for(let r=0; r<sec.repeats; r++) {
+            queue.push({ type:'msg', title:'Get Ready', desc:'Prepare your space.', val:5, isRest:true });
+            
+            plan.sections.forEach(sec => {
+                for(let i=0; i<sec.repeats; i++) {
                     sec.items.forEach(item => {
-                        // Action
-                        queue.push({
-                            type: item.type, // 'reps' or 'timer'
-                            title: item.name,
-                            desc: item.desc,
-                            val: item.val,
-                            isRest: false
-                        });
-                        // Item Rest
-                        if(item.rest > 0) {
-                            queue.push({ type:'timer', title:'Rest', desc:'Shake it off.', val: item.rest, isRest: true });
-                        }
+                        queue.push({ ...item, isRest: false });
+                        if(item.rest > 0) queue.push({ type:'timer', title:'Rest', desc:'Catch your breath.', val:item.rest, isRest:true });
                     });
-                    // Section Rest (if not last repeat)
-                    if(sec.sectionRest > 0 && r < sec.repeats - 1) {
-                         queue.push({ type:'timer', title:'Set Break', desc:'Big rest between sets.', val: sec.sectionRest, isRest: true });
+                    if(sec.sectionRest > 0 && i < sec.repeats - 1) {
+                        queue.push({ type:'timer', title:'Set Break', desc:'Big rest between sets.', val:sec.sectionRest, isRest:true });
                     }
                 }
             });
-            queue.push({ type:'finish', title:'Completed!', desc:'Good job.', val:0 });
+            queue.push({ type:'finish', title:'Workout Complete', desc:'Great job!', val:0 });
             
-            qIndex = 0;
-            document.getElementById('view-player').classList.remove('player-hidden');
-            loadEvent(0);
+            document.getElementById('view-player').classList.remove('hidden');
+            document.getElementById('app-header').classList.add('hidden');
+            document.querySelector('.bottom-bar').classList.add('hidden');
+            
+            qIdx = 0;
+            loadStep(0);
         }
 
-        function loadEvent(idx) {
+        function loadStep(idx) {
             clearInterval(timer);
-            const evt = queue[idx];
-            const pTitle = document.getElementById('player-title');
-            const pDesc = document.getElementById('player-desc');
-            const pLabel = document.getElementById('player-label');
-            const tVal = document.getElementById('timer-val');
-            const tUnit = document.getElementById('timer-unit');
-            const btn = document.getElementById('btn-main-action');
-            const bar = document.getElementById('player-bar');
-
-            // Progress
-            document.getElementById('player-progress').innerText = `${idx + 1} / ${queue.length}`;
-            bar.style.width = `${((idx)/queue.length)*100}%`;
-
-            if(evt.type === 'finish') {
-                pTitle.innerText = "Completed!";
-                pDesc.innerText = "Take a protein shake.";
-                tVal.innerText = "🎉";
-                tUnit.innerText = "";
-                btn.innerText = "CLOSE";
+            const step = queue[idx];
+            
+            document.getElementById('progress-txt').innerText = `${idx+1} / ${queue.length}`;
+            document.getElementById('progress-fill').style.width = `${((idx)/queue.length)*100}%`;
+            
+            const title = document.getElementById('player-title');
+            const desc = document.getElementById('player-desc');
+            const type = document.getElementById('player-type');
+            const val = document.getElementById('timer-val');
+            const btn = document.getElementById('main-btn');
+            
+            if(step.type === 'finish') {
+                title.innerText = step.title;
+                val.innerText = "🎉";
+                desc.innerText = step.desc;
+                btn.innerText = "Finish";
                 btn.onclick = quitWorkout;
                 return;
             }
 
-            pTitle.innerText = evt.title;
-            pDesc.innerText = evt.desc;
+            title.innerText = step.title || step.name;
+            desc.innerText = step.desc || "";
             
-            if(evt.isRest) {
-                pLabel.innerText = "REST";
-                pLabel.style.color = "#8E8E93";
+            if(step.isRest) {
+                type.innerText = "REST";
+                type.style.color = "#999";
             } else {
-                pLabel.innerText = "WORKOUT";
-                pLabel.style.color = "var(--accent)";
+                type.innerText = "WORKOUT";
+                type.style.color = "var(--accent)";
             }
 
-            // Logic
-            if(evt.type === 'reps') {
-                tVal.innerText = evt.val;
-                tUnit.innerText = "REPS";
+            if(step.type === 'reps') {
+                val.innerText = `x${step.val}`;
                 btn.innerText = "DONE";
-                btn.classList.add('btn-primary');
-                btn.onclick = nextEvent;
-                isPaused = true; 
+                btn.onclick = nextStep;
+                isPaused = true;
             } else {
-                // Timer (Work or Rest)
-                timeLeft = evt.val;
-                tVal.innerText = formatTime(timeLeft);
-                tUnit.innerText = "TIME";
-                btn.innerText = "PAUSE";
-                btn.classList.remove('btn-primary'); // Ghost style for timer
-                btn.onclick = togglePause;
-                isPaused = false;
-                startTimer();
+                // Timer
+                timeLeft = step.val;
+                val.innerText = formatTime(timeLeft);
+                btn.innerText = "START";
+                btn.onclick = toggleTimer;
+                isPaused = true;
+                // Auto start for rest? optional. Let's manual start for control
+                toggleTimer(); 
             }
         }
 
-        function startTimer() {
-            timer = setInterval(() => {
-                if(!isPaused) {
+        function toggleTimer() {
+            if(!isPaused) {
+                // Pause
+                isPaused = true;
+                clearInterval(timer);
+                document.getElementById('main-btn').innerText = "RESUME";
+            } else {
+                // Start
+                isPaused = false;
+                document.getElementById('main-btn').innerText = "PAUSE";
+                timer = setInterval(() => {
                     timeLeft--;
                     document.getElementById('timer-val').innerText = formatTime(timeLeft);
                     if(timeLeft <= 0) {
                         clearInterval(timer);
-                        nextEvent();
+                        nextStep();
                     }
-                }
-            }, 1000);
-        }
-
-        function togglePause() {
-            isPaused = !isPaused;
-            const btn = document.getElementById('btn-main-action');
-            btn.innerText = isPaused ? "RESUME" : "PAUSE";
-            btn.classList.toggle('btn-primary');
-        }
-
-        function nextEvent() {
-            qIndex++;
-            if(qIndex < queue.length) {
-                loadEvent(qIndex);
-            } else {
-                quitWorkout();
+                }, 1000);
             }
         }
 
-        function playerAction() {
-            // Placeholder for btn click based on context
+        function nextStep() {
+            qIdx++;
+            if(qIdx < queue.length) loadStep(qIdx);
+            else quitWorkout();
         }
 
         function quitWorkout() {
             clearInterval(timer);
-            document.getElementById('view-player').classList.add('player-hidden');
-        }
-
-        function switchView(view) {
-           // Simple router if needed, currently mainly using overlays
+            document.getElementById('view-player').classList.add('hidden');
+            document.getElementById('app-header').classList.remove('hidden');
+            document.querySelector('.bottom-bar').classList.remove('hidden');
         }
 
         function formatTime(s) {
@@ -572,8 +544,7 @@
             return `${m}:${sec<10?'0'+sec:sec}`;
         }
 
-        // Init
-        renderHome();
+        init();
     </script>
 </body>
 </html>
