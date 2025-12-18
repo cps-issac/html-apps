@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <title>Minimal Memory</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        /* PALETTE */
+        --bg-question: #f9f7f2; /* Paper */
+        --bg-answer: #eef4f8; /* Cool mist */
+        --bg-empty: #f3f4f6;
+
+        --text-main: #2d2d2d;
+        --text-sub: #6e6e73;
+        --text-input: #4a4a4a;
+
+        --accent: #1d1d1d;
+        --accent-success: #2a9d8f;
+        --accent-error: #e76f51;
+
+        --font-serif: "Playfair Display", serif;
+        --font-sans: "Inter", sans-serif;
+
+        --card-radius: 24px;
+        --input-bg: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      body {
+        margin: 0;
+        height: 100dvh;
+        overflow: hidden; /* Prevent body scroll, handle inside app */
+        font-family: var(--font-serif);
+        color: var(--text-main);
+        background-color: var(--bg-question);
+        transition: background-color 0.4s ease;
+      }
+
+      /* Progress Bar */
+      #progress-line {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 4px;
+        background: var(--accent);
+        width: 0%;
+        transition: width 0.3s ease;
+        z-index: 50;
+      }
+
+      .app-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: env(safe-area-inset-top) 24px 30px 24px;
+        position: relative;
+        max-width: 800px;
+        margin: 0 auto;
+      }
+
+      /* Top Bar */
+      .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 10px;
+        margin-bottom: 20px;
+        height: 50px;
+      }
+
+      .deck-pill {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .icon-group {
+        display: flex;
+        gap: 15px;
+      }
+
+      .icon-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        opacity: 0.5;
+        transition: opacity 0.2s;
+      }
+      .icon-btn:hover {
+        opacity: 1;
+      }
+      .icon-btn svg {
+        width: 24px;
+        height: 24px;
+        fill: var(--text-main);
+      }
+
+      /* MAIN CARD AREA */
+      .content-area {
+        flex: 1;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto; /* Allow scrolling for long content */
+        padding-bottom: 20px;
+        scrollbar-width: none;
+      }
+      .content-area::-webkit-scrollbar {
+        display: none;
+      }
+
+      .fade-wrap {
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
+      .label {
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--text-sub);
+        margin-bottom: 12px;
+        margin-top: 10px;
+      }
+
+      /* Question Styles */
+      .question-text {
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--text-main);
+        margin-bottom: 30px;
+      }
+
+      /* User Input Area */
+      .input-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .answer-input {
+        width: 100%;
+        flex: 1;
+        min-height: 150px;
+        border: 2px dashed #d1d1d6;
+        background: transparent;
+        border-radius: 16px;
+        padding: 20px;
+        font-family: var(--font-serif);
+        font-size: 1.2rem;
+        color: var(--text-input);
+        resize: none;
+        transition: border-color 0.2s, background 0.2s;
+        outline: none;
+      }
+      .answer-input:focus {
+        border-color: var(--accent);
+        background: rgba(255, 255, 255, 0.5);
+      }
+      .answer-input::placeholder {
+        color: #b0b0b5;
+        font-style: italic;
+      }
+
+      /* Comparison View (Answer Phase) */
+      .comparison-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        padding-bottom: 20px;
+      }
+
+      .comparison-box {
+        background: #fff;
+        padding: 24px;
+        border-radius: 16px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+      }
+
+      .user-answer-display {
+        font-size: 1.2rem;
+        color: var(--text-sub);
+        font-style: italic;
+        border-left: 3px solid #ccc;
+        padding-left: 15px;
+      }
+
+      .real-answer-display {
+        font-size: 1.4rem;
+        color: var(--text-main);
+        font-weight: 600;
+        line-height: 1.4;
+      }
+
+      /* BOTTOM CONTROLS */
+      .controls {
+        padding-top: 20px;
+        min-height: 100px;
+      }
+
+      .btn-primary {
+        width: 100%;
+        padding: 20px;
+        border-radius: 16px;
+        background: var(--accent);
+        color: white;
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: transform 0.1s;
+      }
+      .btn-primary:active {
+        transform: scale(0.98);
+      }
+
+      .grading-grid {
+        display: flex;
+        gap: 12px;
+        width: 100%;
+      }
+
+      .btn-grade {
+        flex: 1;
+        padding: 18px;
+        border-radius: 14px;
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: all 0.2s;
+        background: white;
+      }
+
+      .grade-wrong {
+        border-color: var(--accent-error);
+        color: var(--accent-error);
+        background: transparent;
+      }
+      .grade-wrong:active {
+        background: #fff0ed;
+      }
+
+      .grade-correct {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+      }
+      .grade-correct:active {
+        transform: scale(0.98);
+        opacity: 0.9;
+      }
+
+      /* MODALS */
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+        z-index: 100;
+        display: none;
+        align-items: flex-end;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .modal.active {
+        display: flex;
+        opacity: 1;
+      }
+
+      .modal-sheet {
+        background: #fff;
+        width: 100%;
+        height: 90%;
+        border-radius: 24px 24px 0 0;
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+        transform: translateY(100%);
+        transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .modal.active .modal-sheet {
+        transform: translateY(0);
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      .modal-header h2 {
+        margin: 0;
+        font-family: var(--font-sans);
+        font-size: 1.5rem;
+      }
+
+      /* Deck List in Modal */
+      .deck-list {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .deck-item {
+        padding: 16px;
+        border: 1px solid #eee;
+        border-radius: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .deck-item.active {
+        border-color: var(--accent);
+        background: #fafafa;
+      }
+
+      /* Inputs in Modal */
+      .modal-input {
+        width: 100%;
+        padding: 14px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        font-family: var(--font-sans);
+        background: #f9f9f9;
+      }
+      .btn-modal-action {
+        width: 100%;
+        padding: 14px;
+        background: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        margin-top: 10px;
+      }
+
+      /* Chart */
+      .chart-container {
+        display: flex;
+        height: 100px;
+        border-radius: 12px;
+        overflow: hidden;
+        margin: 20px 0;
+      }
+      .chart-bar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        font-weight: 600;
+        transition: width 0.5s ease;
+      }
+      .bar-known {
+        background: var(--accent-success);
+      }
+      .bar-unknown {
+        background: var(--accent-error);
+      }
+
+      .stat-legend {
+        display: flex;
+        justify-content: space-between;
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--text-sub);
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 400px) {
+        .question-text {
+          font-size: 2rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Progress Line -->
+    <div id="progress-line"></div>
+
+    <div class="app-container">
+      <!-- Top Navigation -->
+      <div class="top-bar">
+        <div class="deck-pill" id="current-deck-name">Loading...</div>
+        <div class="icon-group">
+          <!-- Stats Icon -->
+          <button class="icon-btn" onclick="openStats()">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"
+              />
+            </svg>
+          </button>
+          <!-- Settings/Menu Icon -->
+          <button class="icon-btn" onclick="openDeckManager()">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Content Area -->
+      <div class="content-area">
+        <!-- Phase 1: Question & Input -->
+        <div id="phase-question" class="fade-wrap">
+          <div class="label">The Concept</div>
+          <div class="question-text" id="q-text"></div>
+
+          <div class="input-wrapper">
+            <div class="label">Your Answer (Optional)</div>
+            <textarea
+              class="answer-input"
+              id="user-input"
+              placeholder="Type your understanding here..."
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Phase 2: Comparison & Result -->
+        <div id="phase-answer" class="fade-wrap hidden">
+          <div class="label" style="text-align: center; margin-bottom: 20px">
+            Comparison
+          </div>
+
+          <div class="comparison-container">
+            <div class="comparison-box">
+              <div class="label" style="margin-top: 0">The Concept</div>
+              <div
+                class="real-answer-display"
+                id="a-q-ref"
+                style="font-size: 1rem; color: var(--text-sub)"
+              >
+                ...
+              </div>
+            </div>
+
+            <div class="comparison-box">
+              <div class="label" style="margin-top: 0">Your Answer</div>
+              <div class="user-answer-display" id="a-user"></div>
+            </div>
+
+            <div class="comparison-box" style="border: 2px solid var(--accent)">
+              <div class="label" style="margin-top: 0; color: var(--accent)">
+                Correct Answer
+              </div>
+              <div class="real-answer-display" id="a-real"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div
+          id="phase-empty"
+          class="fade-wrap hidden"
+          style="justify-content: center; text-align: center"
+        >
+          <div class="question-text">All Reviewed.</div>
+          <div style="color: var(--text-sub); margin-bottom: 30px">
+            Great job! You've gone through all items in this exam.
+          </div>
+          <button class="btn-primary" onclick="resetCurrentDeck()">
+            Start Over
+          </button>
+        </div>
+      </div>
+
+      <!-- Controls Area -->
+      <div class="controls">
+        <!-- Button: Reveal -->
+        <button id="btn-reveal" class="btn-primary" onclick="revealAnswer()">
+          Check Answer
+        </button>
+
+        <!-- Buttons: Grading -->
+        <div id="grading-ui" class="grading-grid hidden">
+          <button class="btn-grade grade-wrong" onclick="handleGrade(false)">
+            I was wrong
+          </button>
+          <button class="btn-grade grade-correct" onclick="handleGrade(true)">
+            I am correct
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Deck Manager -->
+    <div class="modal" id="modal-decks">
+      <div class="modal-sheet">
+        <div class="modal-header">
+          <h2>Exams</h2>
+          <button class="icon-btn" onclick="closeModal('modal-decks')">
+            ✕
+          </button>
+        </div>
+
+        <div class="deck-list" id="deck-list-ui"></div>
+
+        <div
+          style="
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            margin-top: 10px;
+          "
+        >
+          <div class="label">Add New Exam</div>
+          <input
+            type="text"
+            id="new-deck-name"
+            class="modal-input"
+            placeholder="Exam Name"
+          />
+          <textarea
+            id="new-deck-json"
+            class="modal-input"
+            style="height: 80px; resize: none"
+            placeholder='[{"q":"...", "a":"..."}]'
+          ></textarea>
+          <button class="btn-modal-action" onclick="addNewDeck()">
+            Import JSON
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Stats -->
+    <div class="modal" id="modal-stats">
+      <div class="modal-sheet" style="height: 50%">
+        <div class="modal-header">
+          <h2>Statistics</h2>
+          <button class="icon-btn" onclick="closeModal('modal-stats')">
+            ✕
+          </button>
+        </div>
+
+        <div class="label" id="stats-deck-title">Current Deck</div>
+
+        <div class="chart-container">
+          <div id="bar-known" class="chart-bar bar-known" style="width: 50%">
+            50%
+          </div>
+          <div
+            id="bar-unknown"
+            class="chart-bar bar-unknown"
+            style="width: 50%"
+          >
+            50%
+          </div>
+        </div>
+
+        <div class="stat-legend">
+          <span>Known: <b id="val-known">0</b></span>
+          <span>To Review: <b id="val-unknown">0</b></span>
+        </div>
+
+        <div style="margin-top: auto">
+          <button
+            class="btn-modal-action"
+            style="background: #ccc; color: #333"
+            onclick="resetCurrentDeck()"
+          >
+            Reset Progress
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /* --- STATE & DATA --- */
+      const STORAGE_KEY = "minimal_flashcards_v2";
+
+      const defaultData = {
+        activeDeckId: "demo",
+        decks: [
+          {
+            id: "demo",
+            name: "Demo Exam",
+            cards: [
+              {
+                q: "Active Recall",
+                a: "The practice of retrieving information from memory with a prompt.",
+                status: "unknown",
+              },
+              {
+                q: "Spaced Repetition",
+                a: "Reviewing material at increasing intervals.",
+                status: "unknown",
+              },
+            ],
+          },
+        ],
+      };
+
+      let appState = { ...defaultData };
+      let currentCardIndex = -1; // Index within the filtered 'unknown' array
+      let activeCard = null; // The actual card object reference
+
+      /* --- INITIALIZATION --- */
+      function init() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          try {
+            appState = JSON.parse(stored);
+          } catch (e) {
+            console.log("Resetting data");
+          }
+        } else {
+          saveState();
+        }
+        loadDeck();
+      }
+
+      function saveState() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      }
+
+      function getActiveDeck() {
+        return (
+          appState.decks.find((d) => d.id === appState.activeDeckId) ||
+          appState.decks[0]
+        );
+      }
+
+      /* --- CORE FLOW --- */
+
+      function loadDeck() {
+        const deck = getActiveDeck();
+        document.getElementById("current-deck-name").innerText = deck.name;
+        loadNextCard();
+      }
+
+      function loadNextCard() {
+        const deck = getActiveDeck();
+        // Filter only unknown cards
+        const unknownCards = deck.cards.filter((c) => c.status === "unknown");
+
+        // Update Progress Bar
+        const total = deck.cards.length;
+        const done = total - unknownCards.length;
+        const pct = total === 0 ? 0 : (done / total) * 100;
+        document.getElementById("progress-line").style.width = pct + "%";
+
+        // Reset UI
+        document.body.style.backgroundColor = "var(--bg-question)";
+        document.getElementById("phase-question").classList.remove("hidden");
+        document.getElementById("phase-answer").classList.add("hidden");
+        document.getElementById("phase-empty").classList.add("hidden");
+
+        document.getElementById("btn-reveal").classList.remove("hidden");
+        document.getElementById("grading-ui").classList.add("hidden");
+
+        // Reset Inputs
+        const inputField = document.getElementById("user-input");
+        inputField.value = "";
+        inputField.focus(); // Auto focus for quick typing
+
+        if (unknownCards.length === 0) {
+          document.getElementById("phase-question").classList.add("hidden");
+          document.getElementById("phase-empty").classList.remove("hidden");
+          document.getElementById("btn-reveal").classList.add("hidden");
+          document.body.style.backgroundColor = "var(--bg-empty)";
+          return;
+        }
+
+        // Random Selection
+        const randomIndex = Math.floor(Math.random() * unknownCards.length);
+        activeCard = unknownCards[randomIndex];
+
+        // Animate text in
+        const qText = document.getElementById("q-text");
+        qText.style.opacity = 0;
+        setTimeout(() => {
+          qText.innerText = activeCard.q;
+          qText.style.opacity = 1;
+        }, 150);
+      }
+
+      function revealAnswer() {
+        if (!activeCard) return;
+
+        // 1. Capture User Input
+        const userVal = document.getElementById("user-input").value.trim();
+
+        // 2. Populate Comparison View
+        document.getElementById("a-q-ref").innerText = activeCard.q;
+        document.getElementById("a-user").innerText =
+          userVal || "(No answer provided)";
+        document.getElementById("a-real").innerText = activeCard.a;
+
+        // 3. UI Transition
+        document.body.style.backgroundColor = "var(--bg-answer)";
+        document.getElementById("phase-question").classList.add("hidden");
+        document.getElementById("phase-answer").classList.remove("hidden");
+
+        // 4. Swap Buttons
+        document.getElementById("btn-reveal").classList.add("hidden");
+        document.getElementById("grading-ui").classList.remove("hidden");
+      }
+
+      function handleGrade(isCorrect) {
+        if (!activeCard) return;
+
+        if (isCorrect) {
+          activeCard.status = "known";
+        } else {
+          activeCard.status = "unknown";
+        }
+
+        saveState();
+        loadNextCard();
+      }
+
+      function resetCurrentDeck() {
+        if (!confirm("Reset progress for this exam?")) return;
+        const deck = getActiveDeck();
+        deck.cards.forEach((c) => (c.status = "unknown"));
+        saveState();
+        closeModal("modal-stats"); // in case it's open
+        loadDeck();
+      }
+
+      /* --- MODALS & MANAGERS --- */
+
+      function closeModal(id) {
+        document.getElementById(id).classList.remove("active");
+      }
+
+      // Stats Modal
+      function openStats() {
+        const deck = getActiveDeck();
+        const total = deck.cards.length;
+        const known = deck.cards.filter((c) => c.status === "known").length;
+        const unknown = total - known;
+
+        document.getElementById("stats-deck-title").innerText = deck.name;
+        document.getElementById("val-known").innerText = known;
+        document.getElementById("val-unknown").innerText = unknown;
+
+        const kPct = total === 0 ? 0 : (known / total) * 100;
+        const uPct = total === 0 ? 0 : (unknown / total) * 100;
+
+        const barK = document.getElementById("bar-known");
+        const barU = document.getElementById("bar-unknown");
+
+        barK.style.width = kPct + "%";
+        barK.innerText = Math.round(kPct) + "%";
+
+        barU.style.width = uPct + "%";
+        barU.innerText = Math.round(uPct) + "%";
+
+        // Hide text if bar too small
+        if (kPct < 10) barK.innerText = "";
+        if (uPct < 10) barU.innerText = "";
+
+        document.getElementById("modal-stats").classList.add("active");
+      }
+
+      // Deck Manager Modal
+      function openDeckManager() {
+        const list = document.getElementById("deck-list-ui");
+        list.innerHTML = "";
+
+        appState.decks.forEach((d) => {
+          const div = document.createElement("div");
+          const isActive = d.id === appState.activeDeckId;
+          div.className = `deck-item ${isActive ? "active" : ""}`;
+
+          div.innerHTML = `
+            <div>
+              <div style="font-weight:600">${d.name}</div>
+              <div style="font-size:0.8rem; opacity:0.6">${
+                d.cards.length
+              } cards</div>
+            </div>
+            <div style="display:flex; gap:10px">
+              ${
+                !isActive
+                  ? `<button class="icon-btn" onclick="selectDeck('${d.id}')">Select</button>`
+                  : '<span style="font-size:0.8rem; align-self:center;">Active</span>'
+              }
+              ${
+                appState.decks.length > 1
+                  ? `<button class="icon-btn" style="color:red" onclick="deleteDeck('${d.id}')">✕</button>`
+                  : ""
+              }
+            </div>
+          `;
+          list.appendChild(div);
+        });
+
+        document.getElementById("modal-decks").classList.add("active");
+      }
+
+      function selectDeck(id) {
+        appState.activeDeckId = id;
+        saveState();
+        closeModal("modal-decks");
+        loadDeck();
+      }
+
+      function deleteDeck(id) {
+        if (!confirm("Delete this exam?")) return;
+        appState.decks = appState.decks.filter((d) => d.id !== id);
+        if (appState.activeDeckId === id) {
+          appState.activeDeckId = appState.decks[0]?.id || "";
+        }
+        saveState();
+        openDeckManager(); // Re-render list
+        if (appState.decks.length > 0) loadDeck();
+      }
+
+      function addNewDeck() {
+        const name = document.getElementById("new-deck-name").value.trim();
+        const jsonStr = document.getElementById("new-deck-json").value.trim();
+
+        if (!name || !jsonStr) return alert("Fill in name and JSON");
+
+        try {
+          const arr = JSON.parse(jsonStr);
+          if (!Array.isArray(arr)) throw new Error();
+
+          const newDeck = {
+            id: Date.now().toString(),
+            name: name,
+            cards: arr.map((x) => ({ q: x.q, a: x.a, status: "unknown" })),
+          };
+
+          appState.decks.push(newDeck);
+          appState.activeDeckId = newDeck.id;
+          saveState();
+
+          document.getElementById("new-deck-name").value = "";
+          document.getElementById("new-deck-json").value = "";
+
+          closeModal("modal-decks");
+          loadDeck();
+        } catch (e) {
+          alert("Invalid JSON format. Expecting array of objects.");
+        }
+      }
+
+      // Start App
+      init();
+    </script>
+  </body>
+</html>
